@@ -1,0 +1,39 @@
+----Ad unit global inventory report 
+
+select i.country
+       ,i_bt_count
+       ,i_textnote_count
+       ,i_leaderboard_count
+       ,i_afright_count
+       ,i_leaderboard_count
+       ,(i_bt_count + i_textnote_count + i_leaderboard_count + i_afright_count + i_bfic_count ) AS 'Total'
+       ,d_bt_count/i_bt_count as bt_count_percent
+       ,d_textnote_count/i_textnote_count as textnote_count_percent
+       ,d_leaderboard_count/i_leaderboard_count as leaderboard_count_percent
+       ,d_afright_count/i_afright_count as afright_count_percent
+       ,d_bfic_count/i_bfic_count as bfic_count_percent
+from(
+    select c.country 
+           ,count(case when adunit4 in("bc-table-1", "bc-table-2", "bc-table-3") then 1 else null end) as i_bt_count
+           ,count(case when adunit4 = "bc-textnote" then 1 else null end) as i_textnote_count
+           ,count(case when adunit4 = "af-top-leaderboard" THEN 1 else null end) as i_leaderboard_count
+           ,count(case when adunit4 in ("af-right-multi", "af-right-rectangle") then 1 else null end) as i_afright_count
+           ,count(case when adunit4 in ("bf-right-multi", "ic-rectangle") then 1 else null end) as i_bfic_count
+    from dfp.clean_impressions c
+    where to_date(time) between '2018-05-01' and '2018-05-31'
+    and c.country not in ('United States', 'Canada')
+    group by c.country
+    ) i 
+left join (select d.country
+                   ,count(case when adunit4 in("bc-table-1", "bc-table-2", "bc-table-3") then 1 else null end) as d_bt_count
+                   ,count(case when adunit4 = "bc-textnote" then 1 else null end) as d_textnote_count
+                   ,count(case when adunit4 = "af-top-leaderboard" THEN 1 else null end) as d_leaderboard_count
+                   ,count(case when adunit4 in ("af-right-multi", "af-right-rectangle") then 1 else null end) as d_afright_count
+                   ,count(case when adunit4 in ("bf-right-multi", "ic-rectangle") then 1 else null end) as d_bfic_count
+            from dfp.clean_impressions d
+            where to_date(time) between '2018-05-01' and '2018-05-31'
+            and d.country not in ('United States', 'Canada')
+            and revenue_type like 'Direct%'
+            group by d.country) a
+on i.country = a.country
+order by Total desc
