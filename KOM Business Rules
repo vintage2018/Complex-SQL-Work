@@ -1,0 +1,39 @@
+------KOM Business Rules
+
+SELECT relative_path, title, to_date(latest_publish_timestamp) as lastest_pub_date, content_type, timelessness, lucrativeness, tickers
+FROM investopedia.content
+WHERE content_type <> 'Video'
+AND content_type <> 'Syndicated Content' 
+AND (
+upper(tickers) LIKE '%AAPL%'
+OR (upper(tickers) LIKE '%AMD%' 
+AND upper(tickers) NOT LIKE 'AMDA')
+OR upper(tickers) LIKE '%AMZN%'
+OR upper(tickers) LIKE '%ATVI%'
+OR upper(tickers) LIKE '%BAC%'
+OR upper(tickers) LIKE 'DIS,%'
+OR upper(tickers) LIKE '%,DIS'
+OR upper(tickers) LIKE '%,DIS,%'
+OR upper(tickers) LIKE 'DIS'
+OR upper(tickers) LIKE 'F,%'
+OR upper(tickers) LIKE '%,F'
+OR upper(tickers) LIKE '%,F,%'
+OR upper(tickers) LIKE 'F'
+OR upper(tickers) LIKE 'FB,%'
+OR upper(tickers) LIKE '%,FB'
+OR upper(tickers) LIKE '%,FB,%'
+OR upper(tickers) LIKE 'FB'
+OR upper(tickers) LIKE '%GOOGL%'
+OR upper(tickers) LIKE '%INTC%'
+OR upper(tickers) LIKE 'KO,%'
+OR upper(tickers) LIKE '%,KO'
+OR upper(tickers) LIKE '%,KO,%'
+OR upper(tickers) LIKE 'KO'
+OR upper(tickers) LIKE '%NFLX%'
+OR upper(tickers) LIKE '%SNAP%'
+OR upper(title) LIKE '%EBITDA MARGIN%'
+OR upper(title) LIKE '%PROFIT MARGIN%'
+OR upper(title) LIKE '%OPERATING MARGIN%'
+OR upper(title) LIKE '%MARKET SHARE%'
+)
+ORDER BY timelessness DESC, tickers 
