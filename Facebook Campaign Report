@@ -15,7 +15,7 @@ FROM
   FROM facebook.insights i
   LEFT JOIN facebook.posts  p
   USING (post_id)
-  WHERE content_url IN ('/getting-to-know-options/', '/partner/td-ameritrade/getting-down-basics-options/', '/partner/td-ameritrade/brush-your-greeks/', '/partner/td-ameritrade/understanding-option-probabilities/' )
+  WHERE content_url IN ('  ', '  ', '   ')  --add campaign page url 
           AND insight_value LIKE '%link clicks%'
           AND insight_name = 'post_consumptions_by_type'
           group by 1,2,3,4,5,6,7
