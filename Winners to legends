@@ -1,3 +1,5 @@
+-- Pre-and-Post traffice analysis of winner pieces 
+
 with url_list as(
 select case when relative_path in ('/articles/personal-finance/082416/top-10-highestpaying-jobs-world.asp'
                                     ,'/investing/marijuana-stocks/') THEN 'Old'
