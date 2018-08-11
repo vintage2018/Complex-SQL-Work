@@ -1,0 +1,31 @@
+select sub2.post_id, sub2.content_url, sub2.total_click, sub4.total_impression, CAST(total_click AS INT)/CAST(total_impression as int) as CTR
+FROM
+(SELECT sub1.post_id,
+        sub1.content_url,
+        max(sub1.link_click) AS total_click
+FROM
+  (SELECT i.post_id,
+         title,
+         content_url,
+         insight_name,
+         insight_value,
+         cast(trim(split_part(split_part(insight_value,
+         ',', 1),":",2)) AS int) AS link_click,
+         i.load_date
+  FROM facebook.insights i
+  LEFT JOIN facebook.posts  p
+  USING (post_id)
+  WHERE content_url IN ('/getting-to-know-options/', '/partner/td-ameritrade/getting-down-basics-options/', '/partner/td-ameritrade/brush-your-greeks/', '/partner/td-ameritrade/understanding-option-probabilities/' )
+          AND insight_value LIKE '%link clicks%'
+          AND insight_name = 'post_consumptions_by_type'
+          group by 1,2,3,4,5,6,7
+          order by 1,2,3) sub1
+GROUP BY 1,2) sub2
+LEFT JOIN 
+(select sub3.post_id, sub3.impression as total_impression
+from 
+  (select row_number() over (partition by post_id order by load_date desc) as row_n, post_id, load_date, insight_name, insight_value as impression
+     FROM facebook.insights
+     WHERE insight_name='post_impressions_unique') sub3
+where sub3.row_n = 1 ) sub4
+USING (post_id)
