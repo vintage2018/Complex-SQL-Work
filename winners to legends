@@ -1,0 +1,64 @@
+with url_list as(
+select case when relative_path in ('/articles/personal-finance/082416/top-10-highestpaying-jobs-world.asp'
+                                    ,'/investing/marijuana-stocks/') THEN 'Old'
+       when relative_path in (
+       '/personal-finance/top-highest-paying-jobs/'
+       , '/investing/top-marijuana-stocks/') THEN 'New'
+       WHEN relative_path in (
+       '/articles/investing/043014/what-bitcoin-mining.asp') THEN 'Redirected'
+       ELSE 'Origional' END AS URL_type 
+      , relative_path
+      , post_1mo_entrance
+      , pre_1mo_entrance
+      , ((post_1mo_entrance - pre_1mo_entrance)/ pre_1mo_entrance) AS Prepost_PctgDiff
+      , prior_3mo_entrance
+      , post_1mo_keyword_count
+      , pre_1mo_keyword_count
+      , prior_3mo_keyword_count   
+from (
+Select relative_path
+        , sum(CASE WHEN traffic_date between '2018-07-07' and '2018-08-07' THEN entrances ELSE 0 END) AS post_1mo_entrance
+        , sum(CASE WHEN traffic_date between '2018-06-07' and '2018-07-06' THEN entrances ELSE 0 END) AS pre_1mo_entrance
+        , round(sum(CASE WHEN traffic_date between '2018-03-07' and '2018-06-06' THEN entrances ELSE 0 END)/3) AS prior_3mo_entrance
+from investopedia.page_traffic t
+where traffic_channel = 'organic search'
+and relative_path in ('/articles/personal-finance/082416/top-10-highestpaying-jobs-world.asp'
+                        ,'/personal-finance/top-highest-paying-jobs/'
+                        ,'/articles/investing/082914/basics-buying-and-investing-bitcoin.asp'
+                        ,'/tech/how-does-bitcoin-mining-work/'
+                        ,'/articles/investing/043014/what-bitcoin-mining.asp'
+                        ,'/investing/marijuana-stocks/'
+                        ,'/investing/top-marijuana-stocks/'
+                        ,'/personal-finance/personal-finance-apps/'
+                        )
+group by 1) sub1
+left join ( 
+select clean_url
+        ,count(CASE WHEN dt between '2018-07-07' and '2018-08-07' THEN keyword ELSE null END) AS post_1mo_keyword_count 
+        ,count(CASE WHEN dt between '2018-06-07' and '2018-07-06' THEN keyword ELSE null END) AS pre_1mo_keyword_count
+        ,count(CASE WHEN dt between '2018-03-07' and '2018-06-06' THEN keyword ELSE null END) AS prior_3mo_keyword_count
+from moz.serps
+where ranking < 10 
+and clean_url in ('/articles/personal-finance/082416/top-10-highestpaying-jobs-world.asp'
+                        ,'/personal-finance/top-highest-paying-jobs/'
+                        ,'/articles/investing/082914/basics-buying-and-investing-bitcoin.asp'
+                        ,'/tech/how-does-bitcoin-mining-work/'
+                        ,'/articles/investing/043014/what-bitcoin-mining.asp'
+                        ,'/investing/marijuana-stocks/'
+                        ,'/investing/top-marijuana-stocks/'
+                        ,'/personal-finance/personal-finance-apps/'
+                        )
+group by 1) sub2
+on sub1.relative_path =sub2.clean_url
+) 
+
+select CASE WHEN u.relative_path in ( '/articles/personal-finance/082416/top-10-highestpaying-jobs-world.asp', '/personal-finance/top-highest-paying-jobs/') THEN 1
+            WHEN u.relative_path in ('/articles/investing/082914/basics-buying-and-investing-bitcoin.asp') THEN 2
+            WHEN u.relative_path in ( '/tech/how-does-bitcoin-mining-work/', '/articles/investing/043014/what-bitcoin-mining.asp') THEN 3 
+            WHEN u.relative_path in ( '/investing/marijuana-stocks/', '/investing/top-marijuana-stocks/') THEN 4
+            ELSE  5  END AS pair_code
+        , URL_type, u.relative_path, title, pre_1mo_entrance, post_1mo_entrance, Prepost_PctgDiff, prior_3mo_entrance, post_1mo_keyword_count, pre_1mo_keyword_count, prior_3mo_keyword_count
+from url_list u
+left join investopedia.content c
+using (relative_path)
+order by pair_code, URL_type DESC 
