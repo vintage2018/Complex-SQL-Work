@@ -1,0 +1,44 @@
+-------keyword data for semi-timely pieces
+
+SELECT   regexp_replace(page_cleaned, 'http://www.investopedia.com','') as relative_path
+        ,max(CASE WHEN click_rank =1 THEN query END) Keyword_1 
+        ,max(CASE WHEN click_rank =1 THEN total_keywordclick END) K1_Clicks 
+        ,max(CASE WHEN click_rank =1 THEN avg_position END) K1_Rank 
+        ,max(CASE WHEN click_rank =1 THEN total_volume END ) K1_Volume
+        ,max(CASE WHEN click_rank =1 THEN total_impression END) K1_impression 
+        ,max(CASE WHEN click_rank =2 THEN query END) keyword_2 
+        ,max(CASE WHEN click_rank =2 THEN total_keywordclick END) K2_Clicks 
+        ,max(CASE WHEN click_rank =2 THEN avg_position END) K2_Rank 
+        ,max(CASE WHEN click_rank =2 THEN total_volume END ) K2_Volume 
+        ,max(CASE WHEN click_rank =2 THEN total_impression END) K2_impression
+        ,max(CASE WHEN click_rank =3 THEN query END) keyword_3
+        ,max(CASE WHEN click_rank =3 THEN total_keywordclick END) K3_Clicks
+        ,max(CASE WHEN click_rank =3 THEN avg_position END) K3_Rank
+        ,max(CASE WHEN click_rank =3 THEN total_volume END ) K3_Volume
+        ,max(CASE WHEN click_rank =3 THEN total_impression END) K3_impression
+FROM 
+  (SELECT page_cleaned ,
+        query ,
+        total_keywordclick ,
+        avg_position ,
+        total_impression ,
+        click_rank 
+    FROM
+        (SELECT regexp_replace(page, 'https','http') AS page_cleaned 
+        ,query 
+        ,round(sum(ctr * impressions)) AS total_keywordclick 
+        ,round(avg(position)) AS avg_position ,sum(impressions) AS total_impression 
+        ,rank() OVER (PARTITION BY regexp_replace(page, 'https','http')ORDER BY round(sum(ctr * impressions)) DESC, round(avg(position))) AS click_rank
+         FROM google_search_console.search_analytics_page_query
+     GROUP BY 1,2 ) ds_g 
+  ) ds_g_agg
+LEFT JOIN 
+        (SELECT regexp_replace(url,'https','http') AS url_cleaned 
+         , keyword 
+         ,sum(volume_prediction) AS total_volume
+        FROM moz.serps
+        GROUP BY 1,2 ) ds_m
+ON page_cleaned = url_cleaned
+AND query = keyword
+WHERE click_rank <=3
+GROUP BY 1
